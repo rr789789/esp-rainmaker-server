@@ -18,7 +18,7 @@ func InitDB(dbPath string) error {
 	}
 
 	var err error
-	DB, err = sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_foreign_keys=on")
+	DB, err = sql.Open("sqlite", dbPath+"?_journal_mode=WAL&_foreign_keys=on")
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}

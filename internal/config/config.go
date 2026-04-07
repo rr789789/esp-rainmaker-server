@@ -64,12 +64,11 @@ func Load(configPath string) error {
 	viper.SetEnvPrefix("RAINMAKER")
 	viper.AutomaticEnv()
 
+	setDefaults()
+
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(*os.PathError); !ok {
-			return fmt.Errorf("read config: %w", err)
-		}
-		// Use defaults if no config file
-		setDefaults()
+		// Config file not found is OK, use defaults
+		fmt.Printf("Note: config file not found, using defaults\n")
 	}
 
 	AppConfig = &Config{}
