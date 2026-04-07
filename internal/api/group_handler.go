@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"esp-rainmaker-server/internal/model"
 	"esp-rainmaker-server/internal/store"

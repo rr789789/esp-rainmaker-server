@@ -301,7 +301,7 @@ func OAuthLogin(c *gin.Context) {
 	user, _ := store.GetUserByEmail(email)
 	if user == nil {
 		hash, _ := store.HashPassword(uuid.New().String())
-		user = &store.User{
+		user = &model.User{
 			ID:           uuid.New().String(),
 			Email:        email,
 			PasswordHash: hash,

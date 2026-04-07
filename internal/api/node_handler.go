@@ -344,7 +344,7 @@ func InitiateMapping(c *gin.Context) {
 
 // POST /v1/user/nodes/mapping/verify
 func VerifyMapping(c *gin.Context) {
-	userID := c.GetString("user_id")
+	_ = c.GetString("user_id")
 	body, ok := bindJSONOrError(c)
 	if !ok {
 		return
