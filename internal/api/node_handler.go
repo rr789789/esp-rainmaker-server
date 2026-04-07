@@ -106,8 +106,8 @@ func GetNodes(c *gin.Context) {
 func AddNode(c *gin.Context) {
 	userID := c.GetString("user_id")
 
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -244,7 +244,8 @@ func UpdateParamValue(c *gin.Context) {
 	}
 
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	store.UpdateNodeParams(nodeID, body)
@@ -289,8 +290,8 @@ func GetMappingStatus(c *gin.Context) {
 // POST /v1/user/nodes/mapping/initiate
 func InitiateMapping(c *gin.Context) {
 	userID := c.GetString("user_id")
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -344,8 +345,8 @@ func InitiateMapping(c *gin.Context) {
 // POST /v1/user/nodes/mapping/verify
 func VerifyMapping(c *gin.Context) {
 	userID := c.GetString("user_id")
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 

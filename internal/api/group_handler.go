@@ -15,7 +15,8 @@ import (
 // POST /v1/user/node_group
 func CreateGroup(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -42,7 +43,8 @@ func CreateGroup(c *gin.Context) {
 func UpdateGroup(c *gin.Context) {
 	groupID := c.Query("group_id")
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -141,7 +143,8 @@ func GetFabricDetailsForGroup(c *gin.Context) {
 func ConvertGroupToFabric(c *gin.Context) {
 	groupID := c.Query("group_id")
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -155,7 +158,8 @@ func ConvertGroupToFabric(c *gin.Context) {
 // POST /v1/user/node_automation
 func AddAutomation(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -237,7 +241,8 @@ func GetAutomationWithId(c *gin.Context) {
 func UpdateAutomation(c *gin.Context) {
 	automationID := c.Query("automation_id")
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -337,7 +342,8 @@ func GetFwUpdateStatus(c *gin.Context) {
 // POST /v1/user/nodes/ota_update
 func PushFwUpdate(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -365,7 +371,8 @@ func PushFwUpdate(c *gin.Context) {
 // POST /v1/user/push_notification/mobile_platform_endpoint
 func RegisterDeviceToken(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -397,7 +404,8 @@ func UnregisterDeviceToken(c *gin.Context) {
 // POST /v1/user/nodes/cmd
 func SendCommandResponse(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -443,7 +451,8 @@ func GetCommandResponseStatus(c *gin.Context) {
 // POST /v1/user/assume_role
 func AssumeRole(c *gin.Context) {
 	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	if err := c.BindJSON(&body); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 

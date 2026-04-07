@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"esp-rainmaker-server/internal/config"
+	"esp-rainmaker-server/internal/model"
 	"esp-rainmaker-server/internal/store"
 
 	"github.com/gin-gonic/gin"
@@ -140,7 +141,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	code := fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
-	user := &store.User{
+	user := &model.User{
 		ID:               uuid.New().String(),
 		Email:            userName,
 		PasswordHash:     hash,

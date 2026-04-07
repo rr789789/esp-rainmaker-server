@@ -13,8 +13,8 @@ import (
 
 // POST /v1/claim/initiate
 func InitiateClaiming(c *gin.Context) {
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -30,8 +30,8 @@ func InitiateClaiming(c *gin.Context) {
 
 // POST /v1/claim/verify
 func VerifyClaiming(c *gin.Context) {
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -84,8 +84,8 @@ func GetSharingRequests(c *gin.Context) {
 
 // PUT /v1/user/nodes/sharing/requests (accept/decline)
 func UpdateSharingRequest(c *gin.Context) {
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -131,8 +131,8 @@ func RemoveSharingRequest(c *gin.Context) {
 
 // PUT /v1/user/nodes/sharing
 func ShareNodeWithUser(c *gin.Context) {
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 
@@ -195,8 +195,8 @@ func RemoveSharing(c *gin.Context) {
 // ---- Group Sharing ----
 
 func ShareGroupWithUser(c *gin.Context) {
-	var body map[string]interface{}
-	if !bindJSONOrError(c, &body) {
+	body, ok := bindJSONOrError(c)
+	if !ok {
 		return
 	}
 	groupID, _ := body["group_id"].(string)
