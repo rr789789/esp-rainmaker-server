@@ -1,0 +1,25 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+database:
+  path: "./data/rainmaker.db"
+
+jwt:
+  secret: "change-this-secret-in-production"
+  access_token_ttl: 3600
+  refresh_token_ttl: 2592000
+  id_token_ttl: 3600
+
+admin:
+  username: "admin"
+  password: "admin123"
+  session_ttl: 86400
+
+logging:
+  level: "info"
+  api_log_enabled: true
+  api_log_max_entries: 1000
+
+ota:
+  firmware_dir: "./data/firmware"

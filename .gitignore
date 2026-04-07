@@ -1,0 +1,18 @@
+# Binaries
+rainmaker-server
+rainmaker-server-*
+
+# Data
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config overrides
+config.local.yaml
