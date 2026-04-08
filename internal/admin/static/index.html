@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RainMaker Server - 管理后台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div id="app">
+    <!-- Login -->
+    <div v-if="!token" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">RainMaker Server</h1>
+            <div v-if="loginError" class="bg-red-100 text-red-700 p-3 rounded mb-4">{{ loginError }}</div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                <input v-model="username" @keyup.enter="login" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin">
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                <input v-model="password" type="password" @keyup.enter="login" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="••••••">
+            </div>
+            <button @click="login" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">登 录</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div v-else class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-56 bg-gray-900 text-white flex-shrink-0">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-bold">RainMaker</h2>
+                <p class="text-xs text-gray-400">自托管云平台</p>
+            </div>
+            <nav class="mt-4">
+                <a v-for="item in menuItems" :key="item.key"
+                   @click="currentPage = item.key"
+                   :class="['block px-4 py-3 cursor-pointer transition', currentPage === item.key ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800']">
+                    {{ item.label }}
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-56 p-4 border-t border-gray-700">
+                <button @click="logout" class="text-gray-400 hover:text-white text-sm">退出登录</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 p-6 overflow-auto">
+            <!-- Dashboard -->
+            <div v-if="currentPage === 'dashboard'">
+                <h1 class="text-2xl font-bold mb-6">仪表盘</h1>
+                <div class="grid grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-gray-500 text-sm">用户数</h3>
+                        <p class="text-3xl font-bold mt-2">{{ dashboard.user_count || 0 }}</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-gray-500 text-sm">设备数</h3>
+                        <p class="text-3xl font-bold mt-2">{{ dashboard.node_count || 0 }}</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-gray-500 text-sm">在线设备</h3>
+                        <p class="text-3xl font-bold mt-2 text-green-600">{{ dashboard.online_node_count || 0 }}</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-bold mb-2">系统信息</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>版本: {{ dashboard.server_version }}</div>
+                        <div>运行时间: {{ dashboard.uptime }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users -->
+            <div v-if="currentPage === 'users'">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-2xl font-bold">用户管理</h1>
+                    <button @click="showCreateUser = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">添加用户</button>
+                </div>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">邮箱</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">OAuth</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">创建时间</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="u in users" :key="u.id" class="border-t hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm">{{ u.email }}</td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs">{{ u.user_id }}</td>
+                                <td class="px-4 py-3 text-sm">{{ u.is_oauth ? '是' : '否' }}</td>
+                                <td class="px-4 py-3 text-sm">{{ formatDate(u.created_at) }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <button @click="resetPassword(u.user_id)" class="text-blue-600 hover:underline mr-2">重置密码</button>
+                                    <button @click="deleteUser(u.user_id, u.email)" class="text-red-600 hover:underline">删除</button>
+                                </td>
+                            </tr>
+                            <tr v-if="users.length === 0"><td colspan="5" class="px-4 py-8 text-center text-gray-400">暂无用户</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Create User Modal -->
+                <div v-if="showCreateUser" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="bg-white p-6 rounded-lg w-96">
+                        <h3 class="text-lg font-bold mb-4">添加用户</h3>
+                        <div class="mb-3">
+                            <label class="block text-sm mb-1">邮箱</label>
+                            <input v-model="newUser.email" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm mb-1">密码</label>
+                            <input v-model="newUser.password" type="password" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div v-if="createUserError" class="bg-red-100 text-red-700 p-2 rounded mb-3 text-sm">{{ createUserError }}</div>
+                        <div class="flex justify-end gap-2">
+                            <button @click="showCreateUser = false" class="px-4 py-2 border rounded-lg">取消</button>
+                            <button @click="createUser" class="px-4 py-2 bg-blue-600 text-white rounded-lg">创建</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nodes -->
+            <div v-if="currentPage === 'nodes'">
+                <h1 class="text-2xl font-bold mb-6">设备管理</h1>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">节点ID</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">类型</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">所有者</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">状态</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">最后上线</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="n in nodes" :key="n.node_id" class="border-t hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm font-mono">{{ n.node_id }}</td>
+                                <td class="px-4 py-3 text-sm">{{ n.node_type }}</td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs">{{ n.owner_id }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <span :class="n.is_online ? 'text-green-600' : 'text-gray-400'">
+                                        {{ n.is_online ? '在线' : '离线' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm">{{ formatDate(n.last_seen) }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <button @click="deleteNode(n.node_id)" class="text-red-600 hover:underline">删除</button>
+                                </td>
+                            </tr>
+                            <tr v-if="nodes.length === 0"><td colspan="6" class="px-4 py-8 text-center text-gray-400">暂无设备</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Automations -->
+            <div v-if="currentPage === 'automations'">
+                <h1 class="text-2xl font-bold mb-6">自动化规则</h1>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">名称</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">用户ID</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="a in automations" :key="a.automation_id" class="border-t hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm">{{ a.name }}</td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs">{{ a.user_id }}</td>
+                                <td class="px-4 py-3 text-sm">{{ formatDate(a.created_at) }}</td>
+                            </tr>
+                            <tr v-if="automations.length === 0"><td colspan="3" class="px-4 py-8 text-center text-gray-400">暂无自动化规则</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Config -->
+            <div v-if="currentPage === 'config'">
+                <h1 class="text-2xl font-bold mb-6">系统配置</h1>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-bold mb-4">JWT 配置</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                        <div>Access Token 有效期: {{ config.access_token_ttl }}秒</div>
+                        <div>Refresh Token 有效期: {{ config.refresh_token_ttl }}秒</div>
+                    </div>
+                    <h3 class="font-bold mb-4">连接配置</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>监听地址: {{ config.host }}:{{ config.port }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div v-if="currentPage === 'logs'">
+                <h1 class="text-2xl font-bold mb-6">API 日志</h1>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">时间</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">方法</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">路径</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">用户</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">状态</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">耗时</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="l in logs" :key="l.id" class="border-t hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm">{{ formatDate(l.created_at) }}</td>
+                                <td class="px-4 py-3 text-sm font-mono">{{ l.method }}</td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs">{{ l.path }}</td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs">{{ l.user_id }}</td>
+                                <td class="px-4 py-3 text-sm">{{ l.status }}</td>
+                                <td class="px-4 py-3 text-sm">{{ l.duration_ms }}ms</td>
+                            </tr>
+                            <tr v-if="logs.length === 0"><td colspan="6" class="px-4 py-8 text-center text-gray-400">暂无日志</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+createApp({
+    setup() {
+        const token = ref(localStorage.getItem('admin_token') || '');
+        const currentPage = ref('dashboard');
+        const username = ref('admin');
+        const password = ref('');
+        const loginError = ref('');
+
+        const dashboard = ref({});
+        const users = ref([]);
+        const nodes = ref([]);
+        const automations = ref([]);
+        const logs = ref([]);
+        const config = ref({});
+
+        const showCreateUser = ref(false);
+        const newUser = ref({ email: '', password: '' });
+        const createUserError = ref('');
+
+        const menuItems = [
+            { key: 'dashboard', label: '仪表盘' },
+            { key: 'users', label: '用户管理' },
+            { key: 'nodes', label: '设备管理' },
+            { key: 'automations', label: '自动化' },
+            { key: 'config', label: '系统配置' },
+            { key: 'logs', label: 'API 日志' },
+        ];
+
+        async function api(path, options = {}) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token.value) headers['Authorization'] = 'Bearer ' + token.value;
+            const res = await fetch('/admin/api' + path, { ...options, headers: { ...headers, ...options.headers } });
+            if (res.status === 401) { token.value = ''; localStorage.removeItem('admin_token'); return null; }
+            return res.json();
+        }
+
+        async function login() {
+            loginError.value = '';
+            const res = await fetch('/admin/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username.value, password: password.value })
+            });
+            const data = await res.json();
+            if (data.token) {
+                token.value = data.token;
+                localStorage.setItem('admin_token', data.token);
+            } else {
+                loginError.value = data.error || '登录失败';
+            }
+        }
+
+        function logout() {
+            token.value = '';
+            localStorage.removeItem('admin_token');
+        }
+
+        async function loadDashboard() {
+            const data = await api('/dashboard');
+            if (data) dashboard.value = data;
+        }
+
+        async function loadUsers() {
+            const data = await api('/users');
+            if (data) users.value = data.users || [];
+        }
+
+        async function loadNodes() {
+            const data = await api('/nodes');
+            if (data) nodes.value = data.nodes || [];
+        }
+
+        async function loadAutomations() {
+            const data = await api('/automations');
+            if (data) automations.value = data.automations || [];
+        }
+
+        async function loadLogs() {
+            const data = await api('/logs');
+            if (data) logs.value = data.logs || [];
+        }
+
+        async function loadConfig() {
+            const data = await api('/config');
+            if (data) config.value = data;
+        }
+
+        async function createUser() {
+            createUserError.value = '';
+            const data = await api('/users', {
+                method: 'POST',
+                body: JSON.stringify(newUser.value)
+            });
+            if (data && data.user) {
+                showCreateUser.value = false;
+                newUser.value = { email: '', password: '' };
+                loadUsers();
+            } else {
+                createUserError.value = (data && data.error) || '创建失败';
+            }
+        }
+
+        async function deleteUser(id, email) {
+            if (!confirm('确认删除用户 ' + email + '?')) return;
+            await api('/users/' + id, { method: 'DELETE' });
+            loadUsers();
+        }
+
+        async function resetPassword(userId) {
+            const pwd = prompt('输入新密码:');
+            if (!pwd) return;
+            await api('/users/' + userId + '/reset-password', {
+                method: 'POST',
+                body: JSON.stringify({ new_password: pwd })
+            });
+            alert('密码已重置');
+        }
+
+        async function deleteNode(nodeId) {
+            if (!confirm('确认删除设备 ' + nodeId + '?')) return;
+            await api('/nodes/' + nodeId, { method: 'DELETE' });
+            loadNodes();
+        }
+
+        function formatDate(d) {
+            if (!d) return '-';
+            if (d.includes && d.includes('0001')) return '-';
+            return new Date(d).toLocaleString('zh-CN');
+        }
+
+        onMounted(() => {
+            if (token.value) {
+                loadDashboard();
+                loadUsers();
+                loadNodes();
+                loadAutomations();
+                loadLogs();
+                loadConfig();
+            }
+        });
+
+        return {
+            token, currentPage, username, password, loginError,
+            dashboard, users, nodes, automations, logs, config,
+            menuItems, showCreateUser, newUser, createUserError,
+            login, logout, createUser, deleteUser, resetPassword, deleteNode, formatDate,
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>

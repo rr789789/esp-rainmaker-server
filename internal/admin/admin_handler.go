@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"embed"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -12,6 +14,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+//go:embed static/*
+var staticFiles embed.FS
 
 var adminSecret = "admin-secret-change-this"
 
@@ -32,17 +37,30 @@ func RegisterRoutes(r *gin.Engine) {
 		adminAPI.POST("/users/:id/reset-password", AdminAuth(), ResetPassword)
 	}
 
-	// Serve admin frontend (embedded or static files)
+	// Serve embedded admin frontend
+	staticFS, _ := fs.Sub(staticFiles, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
-		if path == "/admin" || path == "/admin/" {
-			c.FileFromFS("index.html", gin.Dir("./web_dist", false))
-			return
+		// Serve admin panel
+		if path == "/admin" || path == "/admin/" || path == "/" {
+			data, err := staticFS.ReadFile("index.html")
+			if err == nil {
+				c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+				return
+			}
 		}
-		if len(path) > 7 && path[:7] == "/admin/" {
-			c.FileFromFS(path[7:], gin.Dir("./web_dist", false))
-			return
+		if len(path) > 1 {
+			// Try to serve static file
+			filePath := path[1:] // remove leading /
+			if _, err := fs.Stat(staticFS, filePath); err == nil {
+				c.Request.URL.Path = "/" + filePath
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
+			}
 		}
+		c.JSON(http.StatusNotFound, gin.H{"description": "not found"})
 	})
 }
 
