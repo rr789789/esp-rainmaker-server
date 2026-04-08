@@ -45,7 +45,7 @@ func RegisterRoutes(r *gin.Engine) {
 		path := c.Request.URL.Path
 		// Serve admin panel
 		if path == "/admin" || path == "/admin/" || path == "/" {
-			data, err := staticFS.ReadFile("index.html")
+			data, err := fs.ReadFile(staticFS, "index.html")
 			if err == nil {
 				c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 				return
